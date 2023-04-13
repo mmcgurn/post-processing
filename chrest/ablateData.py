@@ -286,7 +286,7 @@ if __name__ == "__main__":
 
     # Open each file to get the time and check the available fields
     for file in files:
-        ablate_data = AblateData(args.file)
+        ablate_data = AblateData(file)
 
         # create a chrest data
         chrest_data = ChrestData()

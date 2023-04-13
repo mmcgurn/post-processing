@@ -291,7 +291,7 @@ if __name__ == "__main__":
         # create a chrest data
         chrest_data = ChrestData()
         chrest_data.setup_new_grid(args.start, args.end, args.delta)
-
+        print('grid: ', chrest_data.grid)
         # map the ablate data to chrest
         field_mapping = {"solution_euler": "euler"}
         component_mapping = {"solution_euler": ["rho", "rhoVel0", "rhoVel1", "rhoVel2"]}

@@ -316,6 +316,8 @@ if __name__ == "__main__":
         data = chrest_data.get_field("euler")[0][0, :, 0, :, 3]
         frame = pd.DataFrame(data, columns=linspaces[0], index=linspaces[2])
         frame.to_csv(result_dir / f'{file.stem}.w.csv')
+
+        print("saved ", result_dir / f'{file.stem}.u.csv')
         #
         #
         # dataU = pd.read_csv("/Users/mcgurn/Downloads/foc-open-700/foo.u.csv")

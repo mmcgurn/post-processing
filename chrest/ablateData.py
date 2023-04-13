@@ -4,6 +4,7 @@ import sys
 
 import numpy as np
 import h5py
+import pandas as pd
 
 from chrestData import ChrestData
 from supportPaths import expand_path
@@ -278,34 +279,64 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    # this is some example code for chest file post-processing
-    ablate_data = AblateData(args.file)
+    files = expand_path(args.file)
 
-    if args.print_fields:
-        print("Available fields: ", ', '.join(ablate_data.get_fields()))
+    result_dir = files[0].parent / "csv"
+    result_dir.mkdir(parents=True, exist_ok=True)
 
-    # list the fields to map
-    field_mappings = dict()
-    component_select_names = dict()
-    for field_mapping in args.fields:
-        field_mapping_list = field_mapping.split(':')
-        field_mappings[field_mapping_list[0]] = field_mapping_list[1]
+    # Open each file to get the time and check the available fields
+    for file in files:
+        ablate_data = AblateData(args.file)
 
-        # check to see if there are select components
-        if len(field_mapping_list) > 2:
-            component_select_names[field_mapping_list[0]] = field_mapping_list[2].split(',')
+        # create a chrest data
+        chrest_data = ChrestData()
+        chrest_data.setup_new_grid(args.start, args.end, args.delta)
 
-    # create a chrest data
-    chrest_data = ChrestData()
-    chrest_data.setup_new_grid(args.start, args.end, args.delta)
+        # map the ablate data to chrest
+        field_mapping = {"solution_euler": "euler"}
+        component_mapping = {"solution_euler": ["rho", "rhoVel0", "rhoVel1", "rhoVel2"]}
+        ablate_data.map_to_chrest_data(chrest_data, field_mapping, component_mapping)
 
-    # map the ablate data to chrest
-    ablate_data.map_to_chrest_data(chrest_data, field_mappings, component_select_names, args.max_distance)
+        linspaces = []
+        for dim in range(chrest_data.dimensions):
+            linspaces.append(
+                np.linspace(chrest_data.start_point[dim] + chrest_data.delta[dim] / 2.0,
+                            chrest_data.end_point[dim] - chrest_data.delta[dim] / 2.0,
+                            chrest_data.grid[dim], endpoint=True))
 
-    # write the new file without wild card
-    chrest_data_path_base = args.file.parent / (str(args.file.stem).replace("*", "") + ".chrest")
-    chrest_data_path_base.mkdir(parents=True, exist_ok=True)
-    chrest_data_path_base = chrest_data_path_base / (str(args.file.stem).replace("*", "") + ".chrest")
+        # Save the result data
+        data = chrest_data.get_field("euler")[0][0, :, 0, :, 1]
+        frame = pd.DataFrame(data, columns=linspaces[0], index=linspaces[2])
+        frame.to_csv(result_dir / f'{file.stem}.u.csv')
 
-    # Save the result data
-    chrest_data.save(chrest_data_path_base)
+        data = chrest_data.get_field("euler")[0][0, :, 0, :, 2]
+        frame = pd.DataFrame(data, columns=linspaces[0], index=linspaces[2])
+        frame.to_csv(result_dir / f'{file.stem}.v.csv')
+
+        data = chrest_data.get_field("euler")[0][0, :, 0, :, 3]
+        frame = pd.DataFrame(data, columns=linspaces[0], index=linspaces[2])
+        frame.to_csv(result_dir / f'{file.stem}.w.csv')
+        #
+        #
+        # dataU = pd.read_csv("/Users/mcgurn/Downloads/foc-open-700/foo.u.csv")
+        # dataW = pd.read_csv("/Users/mcgurn/Downloads/foc-open-700/foo.w.csv")
+
+        # import matplotlib.pyplot as plt
+        #
+        # fig, ax = plt.subplots()
+        #
+        # x = dataW.columns[1::10].astype(float)
+        # y = dataW.iloc[::10, 0]
+        # dataU = dataU.iloc[::10, 1::10]
+        # dataW = dataW.iloc[::10, 1::10]
+        # #
+        # # ax.contourf(x, y, dataW)
+        # # ax.set_xlabel('x')
+        # # ax.set_ylabel('y')
+        # # ax.set_aspect('equal')
+        #
+        # ax.quiver(x, y,  dataU, dataW)
+        # ax.set_xlabel('x')
+        # ax.set_ylabel('y')
+        # ax.set_aspect('equal')
+        # fig.show()

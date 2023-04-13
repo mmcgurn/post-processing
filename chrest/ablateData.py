@@ -274,6 +274,11 @@ if __name__ == "__main__":
                         help='If true, prints the fields available to convert', default=False
                         )
 
+    parser.add_argument('--start_index', dest='start_index', type=int)
+
+    parser.add_argument('--end_index', dest='end_index', type=int)
+
+
     parser.add_argument('--max_distance', dest='max_distance', type=float,
                         help="The max distance to search for a point in ablate", default=sys.float_info.max)
 
@@ -285,7 +290,7 @@ if __name__ == "__main__":
     result_dir.mkdir(parents=True, exist_ok=True)
 
     # Open each file to get the time and check the available fields
-    for file in files:
+    for file in files[args.start_index:args.end_index]:
         ablate_data = AblateData(file)
 
         # create a chrest data
